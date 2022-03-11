@@ -6,7 +6,6 @@ import (
 	"log"
 	"os"
 	"sync"
-	"time"
 )
 
 var wg sync.WaitGroup
@@ -30,36 +29,41 @@ func readCsvFile(filePath string) [][]string {
 
 }
 
+func doOK(val [][]string) {
+	for i := range val {
+		val[i] = append(val[i], "-OK")
+	}
+}
+
 func writeToChannel(c chan [][]string, data [][]string, workerID int) {
-	c <- data
-	close(c)
+	defer wg.Done()
+
+	for val := range c {
+		fmt.Printf("Au worker %d de faire son taff...", workerID)
+		doOK(val)
+	}
+	res := <-c
+	fmt.Println(res)
 
 }
 
 func main() {
 	records := readCsvFile("../dataset.csv")
 
-	c := make(chan [][]string)
+	c := make(chan [][]string, 1000)
 
 	for i := 1; i <= WORKERS; i++ {
 		wg.Add(1)
-
-
-	go writeToChannel(c, records, i)
-	time.Sleep(1 * time.Second)
-
-	res := <-c
-
-	fmt.Println("Read:", res)
-	time.Sleep(1 * time.Second)
-
-	_, ok := <-c //check if channel is open or not
-	if ok {
-		fmt.Println("Channel is open!")
-	} else {
-		fmt.Println("Channel is closed!")
+		go writeToChannel(c, records, i)
 	}
+
+	close(c) //close the channel
+
+	wg.Wait() //wait for all writing to be done
+
 }
+
+//comment faire pour répartir le travail entre les workers (batchs de 250 valeurs)
 
 //but ici : créer un channel qui va dispatcher le travail entre les workers
 //pourquoi ici il faut un channel : car sinon les goroutines vont s'éxecuter aléatoirement => les données du fichier vont être traitées aléatoirement
