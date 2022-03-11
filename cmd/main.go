@@ -5,8 +5,13 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"sync"
 	"time"
 )
+
+var wg sync.WaitGroup
+
+const WORKERS = 4
 
 func readCsvFile(filePath string) [][]string {
 	f, err := os.Open("/home/coddity/projets/TEST_GOROUTINES/data/dataset.csv")
@@ -25,7 +30,7 @@ func readCsvFile(filePath string) [][]string {
 
 }
 
-func writeToChannel(c chan [][]string, data [][]string) {
+func writeToChannel(c chan [][]string, data [][]string, workerID int) {
 	c <- data
 	close(c)
 
@@ -36,13 +41,24 @@ func main() {
 
 	c := make(chan [][]string)
 
-	go writeToChannel(c, records)
+	for i := 1; i <= WORKERS; i++ {
+		wg.Add(1)
+
+
+	go writeToChannel(c, records, i)
 	time.Sleep(1 * time.Second)
 
 	res := <-c
 
 	fmt.Println("Read:", res)
 	time.Sleep(1 * time.Second)
+
+	_, ok := <-c //check if channel is open or not
+	if ok {
+		fmt.Println("Channel is open!")
+	} else {
+		fmt.Println("Channel is closed!")
+	}
 }
 
 //but ici : créer un channel qui va dispatcher le travail entre les workers
