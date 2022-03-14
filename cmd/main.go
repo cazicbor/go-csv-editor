@@ -29,28 +29,24 @@ func readCsvFile(filePath string) [][]string {
 
 }
 
-func doOK(val [][]string) {
-	for i := range val {
-		val[i] = append(val[i], "-OK")
+func doOK(data [][]string) [][]string {
+	for i := range data {
+		data[i] = append(data[i], "-OK")
 	}
+	return data
+
 }
 
-func writeToChannel(c chan [][]string, data [][]string, workerID int) {
+func worker(fanout <-chan [][]string, fanin chan<- [][]string, workerID int) { //this func gets data from a channel, and modifies the input string
 	defer wg.Done()
 
-	for val := range c {
-		fmt.Printf("Au worker %d de traiter ses données...", workerID)
-		doOK(val)
+	for val := range fanout {
+		res := doOK(val)
+		fmt.Println(val)
+		fanin <- res
+		fmt.Println(fanin)
 	}
-	res := <-c
-	fmt.Println(res)
 
-}
-
-func readResults(c chan [][]string) {
-	for i := range c {
-		fmt.Println(i)
-	}
 }
 
 func main() {
@@ -60,32 +56,21 @@ func main() {
 
 	fanout := make(chan [][]string, 1000) //diverging channel in which we will store the data, which will be distributed to the workers
 
-	// var lastElementPerWorker *int
-
-	// lastElementPerWorker = new(int)
-
-	// *lastElementPerWorker = len(c)
-
 	for i := 1; i <= WORKERS; i++ {
 		wg.Add(1)
-		go writeToChannel(fanout, records, i)
+		go worker(fanout, fanin, i)
 
 	}
 
 	//ajout de taches dans la queue
-	for i := 1; i <= 1000; i++ {
-		fanout <- records
-	}
+	fanout <- records
 
 	close(fanout) //close the channel
 
 	wg.Wait() //wait for all writing to be done
 
-	readResults(fanin)
-
 }
 
-//comment faire pour répartir le travail entre les workers (batchs de 250 valeurs) ?
 //doit-on faire du Fan-In / Fn-Out avec chacque channel ?
 
 //but ici : créer un channel qui va dispatcher le travail entre les workers
