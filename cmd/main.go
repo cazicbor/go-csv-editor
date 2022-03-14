@@ -42,9 +42,8 @@ func worker(fanout <-chan [][]string, fanin chan<- [][]string, workerID int) { /
 
 	for val := range fanout {
 		res := doOK(val)
-		fmt.Println(val)
 		fanin <- res
-		fmt.Println(fanin)
+		fmt.Println(res)
 	}
 
 }
@@ -61,9 +60,7 @@ func main() {
 		go worker(fanout, fanin, i)
 
 	}
-
-	//ajout de taches dans la queue
-	fanout <- records
+	fanout <- records //adding data to the diverging channel
 
 	close(fanout) //close the channel
 
@@ -79,6 +76,3 @@ func main() {
 //il faut donner un sens au channel, pour que les données ne puissent circuler que dans un sens, pour ne pas risquer d'envoyer les données dans le sens inverse (et avoir des résultats non voulus)
 //une fois que toutes les données sont passées, il ne faut pas oublier de fermer le channel avec la fonction close()
 //quand on transmet une donnée x à un channel c (c <- x), les deux doivent être du même type
-
-//OK CE QU'ON VA FAIRE : ON VA APPLIQUER L'ALGORITHME DE FAN IN : ON VA ASSIGNER UN CHANNEL À CHAQUE WORKER, ET ON VA TRANSMETTRE A CHAQUE WORKER 250 ELEMENTS DU DATASET. CHAQUE WORKER VA DONC AVOIR SES 250
-//ELEMENTS TRANSMIS DANS SON CHANNEL PERSO, ON VA AINSI AVOIR UN TRAITEMENT SIMULTANÉ DES 1000 DONNÉES, QU'ON TRANSMETTRA ENSUITE DANS LE MÊME CHANNEL
