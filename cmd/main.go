@@ -26,7 +26,6 @@ func readCsvFile(filePath string) [][]string {
 	}
 
 	return records
-
 }
 
 func doOK(data [][]string) [][]string {
@@ -34,7 +33,6 @@ func doOK(data [][]string) [][]string {
 		data[i] = append(data[i], "-OK")
 	}
 	return data
-
 }
 
 func worker(fanout <-chan [][]string, fanin chan<- [][]string, workerID int) { //this func gets data from a channel, and modifies the input string
@@ -45,7 +43,6 @@ func worker(fanout <-chan [][]string, fanin chan<- [][]string, workerID int) { /
 		fanin <- res
 		fmt.Println(res)
 	}
-
 }
 
 func main() {
@@ -67,8 +64,6 @@ func main() {
 	wg.Wait() //wait for all writing to be done
 
 }
-
-//doit-on faire du Fan-In / Fn-Out avec chacque channel ?
 
 //but ici : créer un channel qui va dispatcher le travail entre les workers
 //pourquoi ici il faut un channel : car sinon les goroutines vont s'éxecuter aléatoirement => les données du fichier vont être traitées aléatoirement
